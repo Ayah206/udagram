@@ -9,15 +9,12 @@ Parameters:
     Type: String
   PubSubnetCIDR:
     Type: String
+  PubSubnet2CIDR:
+    Type: String
   AMItoUse:
     Type: String
 
 Resources:
-  # ProfileWithRolesForOurApp:
-  #   Type: AWS::IAM::InstanceProfile
-  #   Properties:
-  #     Roles:
-  #       - UdacityS3ReadOnlyEC2
   UdagramVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -41,6 +38,16 @@ Resources:
       Tags:
         - Key: Name
           Value: "Public Subnet AZ1"
+      VpcId: !Ref UdagramVPC
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1b"
+      CidrBlock: !Ref PubSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: "Public Subnet AZ2"
       VpcId: !Ref UdagramVPC
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
@@ -98,6 +105,11 @@ Resources:
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet
+  AssociatePUBRT2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
   AssociatePRIVRT1:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -140,9 +152,9 @@ Resources:
           ToPort: 22
           CidrIp: 105.112.55.122/0
       SecurityGroupEgress:
-        - IpProtocol: -1
-          FromPort: -1
-          ToPort: -1
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
           CidrIp: 0.0.0.0/0
   LbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -156,9 +168,9 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
           CidrIp: 0.0.0.0/0
   RoleForS3Access:
     Type: "AWS::IAM::Role"
@@ -233,9 +245,12 @@ Resources:
   UdagramLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: "180"
       Subnets:
-        - Ref: PrivateSubnet1
-        - Ref: PrivateSubnet2
+        - Ref: PublicSubnet
+        - Ref: PublicSubnet2
       SecurityGroups:
         - Ref: LbSecurityGroup
   Listener:

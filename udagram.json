@@ -20,6 +20,10 @@
         "ParameterValue": "10.0.3.0/24"
     },
     {
+        "ParameterKey": "PubSubnet2CIDR",
+        "ParameterValue": "10.0.4.0/24"
+    },
+    {
         "ParameterKey": "AMItoUse",
         "ParameterValue": "ami-0729e439b6769d6ab"
     }
